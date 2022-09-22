@@ -12,11 +12,13 @@ void setup()
 
   // Initialize PS4 Controller
   // TODO: Find and use correct MAC address
-  PS4.begin("1a:2b:3c:01:01:01");
+  PS4.begin();
 
   // Enable DAC pins
   dac_output_enable(DAC_CHANNEL_1); // GPIO25
   dac_output_enable(DAC_CHANNEL_2); // GPIO26
+
+  Serial.println("Setup complete");
 }
 
 void loop()
