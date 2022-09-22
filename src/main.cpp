@@ -15,17 +15,23 @@ void setup()
   PS4.begin("1a:2b:3c:01:01:01");
 
   // Enable DAC pins
-  dac_output_enable(DAC_CHANNEL_1);
-  dac_output_enable(DAC_CHANNEL_2);
+  dac_output_enable(DAC_CHANNEL_1); // GPIO25
+  dac_output_enable(DAC_CHANNEL_2); // GPIO26
 }
 
 void loop()
 {
+  // Read PS4 Controller Outputs
   int8_t xPos = PS4.LStickX();
   int8_t yPos = PS4.LStickY();
 
+  // Log out values to Serial console
   Serial.print("X: ");
   Serial.println(xPos);
   Serial.print("Y: ");
   Serial.println(yPos);
+
+  // Write values to DAC (experimental)
+  dac_output_voltage(DAC_CHANNEL_1, xPos);
+  dac_output_voltage(DAC_CHANNEL_2, yPos);
 }
