@@ -10,7 +10,8 @@ void setup()
   // Enable Serial output
   Serial.begin(115200);
 
-  // Initialize PS4 Controller1
+  // Initialize PS4 Controller
+  // TODO: Find and use correct MAC address
   PS4.begin("1a:2b:3c:01:01:01");
 
   // Enable DAC pins
@@ -20,8 +21,8 @@ void setup()
 
 void loop()
 {
-  double xPos = PS4.LStickX();
-  double yPos = PS4.LStickY();
+  int8_t xPos = PS4.LStickX();
+  int8_t yPos = PS4.LStickY();
 
   Serial.print("X: ");
   Serial.println(xPos);
