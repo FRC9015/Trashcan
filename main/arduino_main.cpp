@@ -20,9 +20,10 @@ limitations under the License.
 #ifndef CONFIG_BLUEPAD32_PLATFORM_ARDUINO
 #error "Must only be compiled when using Bluepad32 Arduino platform"
 #endif  // !CONFIG_BLUEPAD32_PLATFORM_ARDUINO
-
 #include <Arduino.h>
 #include <Bluepad32.h>
+#include <iostream>
+
 
 //
 // README FIRST, README FIRST, README FIRST
@@ -80,6 +81,15 @@ void onDisconnectedGamepad(GamepadPtr gp) {
 }
 
 float mult = 1;
+const int solenoidPin = 0; //a placeholder value is defined now, change this to the actual solenoid ID.
+
+void pushSolenoid() {
+    digitalWrite(solenoidPin, HIGH);
+}
+
+void pullSolenoid(){
+    digitalWrite(solenoidPIN, LOW);
+}
 
 
 // Arduino setup function. Runs in CPU 1
@@ -134,6 +144,14 @@ void loop() {
                 mult = mult+0.1;
             }
             
+            if (myGamepad->b()) {
+                pushSolenoid();
+
+            }
+            if (myGamepad->a()) {
+                pullSolenoid();
+            }
+            
 
             // Another way to query the buttons, is by calling buttons(), or
             // miscButtons() which return a bitmask.
@@ -151,6 +169,7 @@ void loop() {
                 myGamepad->brake(),       // (0 - 1023): brake button
                 myGamepad->throttle(),    // (0 - 1023): throttle (AKA gas) button
                 myGamepad->miscButtons()  // bitmak of pressed "misc" buttons
+                
                 
             );
             if (abs(myGamepad->axisY())<40){
