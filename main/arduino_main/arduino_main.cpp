@@ -1,3 +1,5 @@
+#include <Bluepad32.h>
+
 /****************************************************************************
 http://retro.moe/unijoysticle2
 
@@ -81,14 +83,16 @@ void onDisconnectedGamepad(GamepadPtr gp) {
 }
 
 float mult = 1;
-const int solenoidPin = 0; //a placeholder value is defined now, change this to the actual solenoid ID.
+const int solenoidPin = 25; //a placeholder value is defined now, change this to the actual solenoid ID.
 
 void pushSolenoid() {
     digitalWrite(solenoidPin, HIGH);
+    digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void pullSolenoid(){
     digitalWrite(solenoidPIN, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
 }
 
 
@@ -115,6 +119,8 @@ void setup() {
 
     ledcAttachPin(22, 4);
     ledcSetup(4, 1000, 8);
+
+    pinMode(LED_BUILTIN, OUTPUT);
 }
 
 // Arduino loop function. Runs in CPU 1
