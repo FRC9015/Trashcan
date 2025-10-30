@@ -16,6 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ****************************************************************************/
 
+
 #include <Arduino.h>
 #include <Bluepad32.h>
 #include <iostream>
@@ -24,22 +25,60 @@ limitations under the License.
 //
 // README FIRST, README FIRST, README FIRST
 //
-// Bluepad32 has a built-in interactive console.
+// Bluepad32 has a built-in interactive Serial.
 // By default it is enabled (hey, this is a great feature!).
 // But it is incompatible with Arduino "Serial" class.
 //
-// Instead of using "Serial" you can use Bluepad32 "Console" class instead.
+// Instead of using "Serial" you can use Bluepad32 "Serial" class instead.
 // It is somewhat similar to Serial but not exactly the same.
 //
-// Should you want to still use "Serial", you have to disable the Bluepad32's console
+// Should you want to still use "Serial", you have to disable the Bluepad32's Serial
 // from "sdkconfig.defaults" with:
-//    CONFIG_BLUEPAD32_USB_CONSOLE_ENABLE=n
+//    CONFIG_BLUEPAD32_USB_Serial_ENABLE=n
 
 GamepadPtr myControllers[BP32_MAX_CONTROLLERS];
 float mult = 1;
-const int solenoidPIN = 25;  //a placeholder value is defined now, change this to the actual solenoid ID.
-int linearRetractorID = 34;
-int linearExtractorID = 35;
+int forwardStartPin = 14; // 26
+int reverseStartPin = 26; // 33
+int forwardStopPin  = 25; // 32
+int reverseStopPin  = 32; // 34
+
+void setup() {
+  Serial.begin(9600);
+  // Setup the Bluepad32 callbacks
+  BP32.setup(&onConnectedController, &onDisconnectedController);
+
+
+  // "forgetBluetoothKeys()" should be called when the user performs
+  // a "device factory reset", or similar.
+  // Calling "forgetBluetoothKeys" in setup() just as an example.
+  // Forgetting Bluetooth keys prevents "paired" gamepads to reconnect.
+  // But might also fix some connection / re-connection issues.
+  BP32.forgetBluetoothKeys();
+  ledcAttachPin(18, 1);
+  ledcSetup(1, 1000, 8);
+  ledcAttachPin(19, 2);
+  ledcSetup(2, 1000, 8);
+
+  ledcAttachPin(21, 3);
+  ledcSetup(3, 1000, 8);
+
+  ledcAttachPin(22, 4);
+  ledcSetup(4, 1000, 8);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  // linear actuator
+  pinMode(forwardStartPin, OUTPUT);
+  pinMode(reverseStartPin, OUTPUT);
+  pinMode(forwardStopPin, OUTPUT);
+  pinMode(reverseStopPin, OUTPUT);
+
+  // Initialize all pins LOW
+  digitalWrite(forwardStartPin, LOW);
+  digitalWrite(reverseStartPin, LOW);
+  digitalWrite(forwardStopPin, LOW);
+  digitalWrite(reverseStopPin, LOW);
+}
 
 void onConnectedController(ControllerPtr ctl) {
   bool foundEmptySlot = false;
@@ -88,23 +127,31 @@ void onDisconnectedController(ControllerPtr ctl) {
   }
 }
 void openTrashcan() {
-  digitalWrite(linearRetractorID, LOW);
-  digitalWrite(linearExtractorID, HIGH);
-  
-  delay(2000);
-
-  digitalWrite(linearRetractorID, HIGH);
-  digitalWrite(linearExtractorID, HIGH);
+  digitalWrite(forwardStartPin, HIGH);  // start forward
+  digitalWrite(reverseStopPin, HIGH);   // ensure reverse is stopped
+  delay(5000);                       // move for 5 seconds
+  digitalWrite(forwardStartPin, LOW);   // stop forward
+  digitalWrite(forwardStopPin, HIGH);   // signal forward stop
+  delay(100);                            // short pulse
+  digitalWrite(forwardStopPin, LOW);
 }
 
 void closeTrashcan() {
-  digitalWrite(linearRetractorID, HIGH);
-  digitalWrite(linearExtractorID, LOW);
-
-  delay(2000);
-
-  digitalWrite(linearRetractorID, HIGH);
-  digitalWrite(linearRetractorID, HIGH);
+  printf("%d \n",0);
+  digitalWrite(reverseStartPin, HIGH);  // start reverse
+    printf("%d \n", 1);
+  digitalWrite(forwardStopPin, HIGH);   // ensure forward is stopped
+    printf("%d \n",2);
+  delay(5000);                       // move for 5 seconds
+    printf("%d \n",3);
+  digitalWrite(reverseStartPin, LOW);   // stop reverse
+    printf("%d \n",4);
+  digitalWrite(reverseStopPin, HIGH);   // signal reverse stop
+    printf("%d \n",5);
+  delay(100);                            // short pulse
+    printf("%d \n",6);
+  digitalWrite(reverseStopPin, LOW);
+    printf("%d \n",7);
 }
 void processGamepad(ControllerPtr gamepad) {
   int x, y;
@@ -116,13 +163,15 @@ void processGamepad(ControllerPtr gamepad) {
   }
 
   if (gamepad->b()) {
+    printf("OPEN");
     openTrashcan();
   }
   if (gamepad->a()) {
+    printf("close");
     closeTrashcan();
   }
 
-  Console.printf(
+  Serial.printf(
     "idx=%d, dpad: 0x%02x, buttons: 0x%04x, axis L: %4d, %4d, axis R: %4d, "
     "%4d, brake: %4d, throttle: %4d, misc: 0x%02x\n",
     gamepad->index(),       // Gamepad Index
@@ -165,40 +214,11 @@ void processGamepad(ControllerPtr gamepad) {
 
 
 // Arduino setup function. Runs in CPU 1
-void setup() {
-  Serial.begin(9600);
-  // Setup the Bluepad32 callbacks
-  BP32.setup(&onConnectedController, &onDisconnectedController);
 
-  // "forgetBluetoothKeys()" should be called when the user performs
-  // a "device factory reset", or similar.
-  // Calling "forgetBluetoothKeys" in setup() just as an example.
-  // Forgetting Bluetooth keys prevents "paired" gamepads to reconnect.
-  // But might also fix some connection / re-connection issues.
-  BP32.forgetBluetoothKeys();
-  ledcAttachPin(18, 1);
-  ledcSetup(1, 1000, 8);
-  ledcAttachPin(19, 2);
-  ledcSetup(2, 1000, 8);
-
-  ledcAttachPin(21, 3);
-  ledcSetup(3, 1000, 8);
-
-  ledcAttachPin(22, 4);
-  ledcSetup(4, 1000, 8);
-
-  pinMode(LED_BUILTIN, OUTPUT);
-  // linear actuator
-  pinMode(linearRetractorID, OUTPUT);
-  pinMode(linearExtractorID, OUTPUT);
-
-  // Initializes Retractor Pin as Low
-  digitalWrite(linearRetractorID, HIGH);
-  digitalWrite(linearExtractorID, HIGH);
-}
 
 // Arduino loop function. Runs in CPU 1
 void loop() {
+
   BP32.update();
   for (int i = 0; i < BP32_MAX_CONTROLLERS; i++) {
     ControllerPtr myController = myControllers[i];
@@ -214,5 +234,6 @@ void loop() {
       }
     }
   }
+
   delay(150);
 }
